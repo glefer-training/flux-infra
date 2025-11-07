@@ -22,6 +22,8 @@ metadata:
   namespace: traefik
 spec:
   dependsOn:
+    - name: prometheus-operator-crds
+      namespace: flux-system
     - name: cert-manager
       namespace: cert-manager
   interval: 12h
