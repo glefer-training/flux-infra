@@ -4,3 +4,4 @@ resources:
   - cert-manager.yaml
   - ingress-traefik.yaml
   - external-dns.yaml
+  - grafana.yaml

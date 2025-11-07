@@ -1,0 +1,177 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+  labels:
+    toolkit.fluxcd.io/tenant: sre-team
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: grafana
+  namespace: monitoring
+spec:
+  interval: 24h
+  url: https://grafana.github.io/helm-charts
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: grafana
+  namespace: monitoring
+spec:
+  dependsOn:
+    - name: kube-prometheus-stack
+      namespace: monitoring
+  interval: 12h
+  install:
+    createNamespace: true
+    strategy:
+      name: RetryOnFailure
+      retryInterval: 2m
+  upgrade:
+    strategy:
+      name: RetryOnFailure
+      retryInterval: 3m
+  chart:
+    spec:
+      chart: grafana
+      version: "7.0.19"
+      sourceRef:
+        kind: HelmRepository
+        name: grafana
+        namespace: monitoring
+      interval: 12h
+  values:
+    adminPassword: aaa
+    persistence:
+      enabled: true
+      size: 10Gi
+    ingress:
+      enabled: true
+      ingressClassName: traefik
+      annotations:
+        traefik.ingress.kubernetes.io/router.entrypoints: websecure
+        traefik.ingress.kubernetes.io/router.tls: "true"
+        cert-manager.io/cluster-issuer: letsencrypt-production
+        nginx.ingress.kubernetes.io/ssl-redirect: "true"
+      hosts:
+        - grafana.glefer.fr
+      tls:
+        - secretName: grafana-tls
+          hosts:
+            - grafana.glefer.fr
+    datasources:
+      datasources.yaml:
+        apiVersion: 1
+        datasources:
+          - name: Prometheus
+            type: prometheus
+            url: http://prometheus-kube-prometheus-prometheus.monitoring:9090
+            access: proxy
+            isDefault: true
+    dashboardProviders:
+      dashboardproviders.yaml:
+        apiVersion: 1
+        providers:
+          - name: 'default'
+            orgId: 1
+            folder: ''
+            type: file
+            disableDeletion: false
+            editable: true
+            options:
+              path: /var/lib/grafana/dashboards/default
+    dashboards:
+      default:
+        kubernetes-cluster-monitoring:
+          gnetId: 15757
+          revision: 37
+          datasource: Prometheus
+        kubernetes-cluster-summary:
+          gnetId: 8588
+          revision: 1
+          datasource: Prometheus
+        node-exporter:
+          gnetId: 1860
+          revision: 31
+          datasource: Prometheus
+        kubernetes-pods:
+          gnetId: 15760
+          revision: 16
+          datasource: Prometheus
+        nginx-custom:
+          json: |
+            {
+              "dashboard": {
+                "id": null,
+                "title": "NGINX Monitoring",
+                "tags": ["nginx"],
+                "timezone": "browser",
+                "panels": [
+                  {
+                    "id": 1,
+                    "title": "NGINX Status",
+                    "type": "stat",
+                    "targets": [{
+                      "expr": "nginx_up",
+                      "refId": "A"
+                    }],
+                    "gridPos": {"h": 8, "w": 6, "x": 0, "y": 0}
+                  },
+                  {
+                    "id": 2,
+                    "title": "Total Requests",
+                    "type": "stat",
+                    "targets": [{
+                      "expr": "nginx_http_requests_total",
+                      "refId": "B"
+                    }],
+                    "gridPos": {"h": 8, "w": 6, "x": 6, "y": 0}
+                  },
+                  {
+                    "id": 3,
+                    "title": "Active Connections",
+                    "type": "stat",
+                    "targets": [{
+                      "expr": "nginx_connections_active",
+                      "refId": "C"
+                    }],
+                    "gridPos": {"h": 8, "w": 6, "x": 12, "y": 0}
+                  },
+                  {
+                    "id": 4,
+                    "title": "Request Rate",
+                    "type": "graph",
+                    "targets": [{
+                      "expr": "rate(nginx_http_requests_total[5m])",
+                      "refId": "D"
+                    }],
+                    "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}
+                  },
+                  {
+                    "id": 5,
+                    "title": "Connection States",
+                    "type": "graph",
+                    "targets": [
+                      {"expr": "nginx_connections_reading", "refId": "E", "legendFormat": "Reading"},
+                      {"expr": "nginx_connections_writing", "refId": "F", "legendFormat": "Writing"},
+                      {"expr": "nginx_connections_waiting", "refId": "G", "legendFormat": "Waiting"}
+                    ],
+                    "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8}
+                  }
+                ],
+                "time": {"from": "now-1h", "to": "now"},
+                "refresh": "10s"
+              }
+            }
+    serviceMonitor:
+      enabled: true
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 100m
+        memory: 128Mi
