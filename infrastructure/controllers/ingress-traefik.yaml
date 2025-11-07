@@ -22,6 +22,8 @@ metadata:
   namespace: traefik
 spec:
   dependsOn:
+    - name: kube-prometheus-stack
+      namespace: monitoring
     - name: cert-manager
       namespace: cert-manager
   interval: 12h
