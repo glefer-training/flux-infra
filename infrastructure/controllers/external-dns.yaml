@@ -50,7 +50,7 @@ spec:
     
     provider: ovh
     policy: sync
-    txtOwnerId: argocd
+    # txtOwnerId: argocd
     
     domainFilters:
       - glefer.fr
