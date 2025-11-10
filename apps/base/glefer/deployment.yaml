@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: nginx
+  namespace: glefer
   annotations:
     image.toolkit.fluxcd.io/automated: "true"
 spec:
@@ -16,7 +17,7 @@ spec:
     spec:
       containers:
       - name: nginx
-        image: glefer/cv:sha-main-9b13a3f # {"$imagepolicy": "glefer:glefer-cv"}
+        image: glefer/cv:run-19230688728 # {"$imagepolicy": "flux-system:glefer-cv"}
         ports:
         - containerPort: 80
 

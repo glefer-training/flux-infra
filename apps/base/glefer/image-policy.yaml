@@ -2,13 +2,13 @@ apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImagePolicy
 metadata:
   name: glefer-cv
-  namespace: glefer
+  namespace: flux-system
 spec:
   imageRepositoryRef:
     name: glefer-cv
   policy:
-    alphabetical:
-      order: desc
+    numerical:
+      order: asc
   filterTags:
-    pattern: '^run-[a-z0-9]+'
-    extract: '$0'
+    pattern: '^run-([0-9]+)$'
+    extract: '$1'

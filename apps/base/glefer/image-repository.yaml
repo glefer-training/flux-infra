@@ -2,7 +2,7 @@ apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageRepository
 metadata:
   name: glefer-cv
-  namespace: glefer
+  namespace: flux-system
 spec:
   image: glefer/cv
   interval: 1m0s
