@@ -8,7 +8,6 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-system
-    namespace: flux-system
   git:
     checkout:
       ref:
@@ -18,7 +17,7 @@ spec:
         email: fluxcdbot@users.noreply.github.com
         name: fluxcdbot
       messageTemplate: |
-        Automated image update
+        Automated image update for glefer-cv
 
         Automation name: {{ .AutomationObject }}
 
