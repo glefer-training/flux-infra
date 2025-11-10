@@ -6,9 +6,9 @@ metadata:
 spec:
   imageRepositoryRef:
     name: glefer-cv
+  filterTags:
+    pattern: '^sha-main-[a-f0-9]+$'
+    extract: 'sha-main-(?P<sha>[a-f0-9]+)'
   policy:
     alphabetical:
       order: asc
-  filterTags:
-    pattern: '^sha-main-[a-f0-9]+'
-    extract: '$0'
