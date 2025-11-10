@@ -10,5 +10,5 @@ spec:
     alphabetical:
       order: desc
   filterTags:
-    pattern: '^run-[0-9]+'
+    pattern: '^run-[a-z0-9]+'
     extract: '$0'
