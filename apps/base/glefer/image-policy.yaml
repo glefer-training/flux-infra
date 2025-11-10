@@ -7,7 +7,8 @@ spec:
   imageRepositoryRef:
     name: glefer-cv
   policy:
-    latest: {}
+    alphabetical:
+      order: desc
   filterTags:
-    pattern: '^sha-main-[a-f0-9]+'
+    pattern: '^run-[0-9]+'
     extract: '$0'
