@@ -17,7 +17,6 @@ spec:
     spec:
       containers:
       - name: nginx
-        image: glefer/cv:run-19230688728 # {"$imagepolicy": "flux-system:glefer-cv"}
+        image: glefer/cv:run-19231149189 # {"$imagepolicy": "flux-system:glefer-cv"}
         ports:
         - containerPort: 80
-
