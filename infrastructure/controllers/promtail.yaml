@@ -27,90 +27,10 @@ spec:
         namespace: loki
       interval: 12h
   values:
-    # Configuration du client Loki
-    config:
-      clients:
-        - url: http://loki:3100/loki/api/v1/push
-    
-    # Configuration du fichier positions
-    configmap:
-      positions:
-        filename: /run/promtail/positions.yaml
-    
-    # Ajout d'une configuration spéciale pour nginx via extraScrapeConfigs
-    extraScrapeConfigs: |
-      - job_name: nginx-glefer
-        kubernetes_sd_configs:
-          - role: pod
-            namespaces:
-              names:
-                - glefer
-        relabel_configs:
-          - source_labels: [__meta_kubernetes_pod_label_app]
-            action: keep
-            regex: nginx
-          - source_labels: [__meta_kubernetes_pod_container_name]
-            action: keep
-            regex: nginx
-          - source_labels: [__meta_kubernetes_pod_container_name]
-            action: replace
-            target_label: container
-          - source_labels: [__meta_kubernetes_namespace]
-            action: replace
-            target_label: namespace
-          - source_labels: [__meta_kubernetes_pod_name]
-            action: replace
-            target_label: pod
-          - source_labels: [__meta_kubernetes_pod_uid, __meta_kubernetes_pod_container_name]
-            target_label: __path__
-            separator: /
-            replacement: /var/log/pods/*$1/*.log
-        pipeline_stages:
-          # Ajouter le label filename pour compatibilité dashboards
-          - static_labels:
-              filename: /var/log/nginx/access.log
-          # Parse JSON logs nginx
-          - json:
-              expressions:
-                timestamp: timestamp
-                remote_addr: remote_addr
-                method: method
-                uri: uri
-                status: status
-                bytes_sent: bytes_sent
-                request_time: request_time
-                referrer: referrer
-                user_agent: user_agent
-          # Labels pour Loki
-          - labels:
-              method:
-              status:
-          # Classification des status codes
-          - template:
-              source: status_class
-              template: |
-                {{- if and (ge (int .status) 200) (lt (int .status) 300) -}}2xx
-                {{- else if and (ge (int .status) 300) (lt (int .status) 400) -}}3xx
-                {{- else if and (ge (int .status) 400) (lt (int .status) 500) -}}4xx
-                {{- else if and (ge (int .status) 500) (lt (int .status) 600) -}}5xx
-                {{- else -}}other{{- end -}}
-          # Ajout du label status_class
-          - labels:
-              status_class:
-          # Métriques Prometheus dérivées des logs
-          - metrics:
-              nginx_http_requests_total:
-                type: Counter
-                description: "Total number of HTTP requests by status code"
-                config:
-                  value: "1"
-                  action: inc
-              nginx_http_request_duration_seconds:
-                type: Histogram
-                description: "HTTP request duration in seconds"
-                source: request_time
-                config:
-                  buckets: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10]
+    # Utilisation d'un ConfigMap externe pour la configuration complète
+    configFrom:
+      name: promtail-config
+      key: promtail.yaml
 
     # DaemonSet pour collecter sur tous les noeuds
     daemonset:
