@@ -66,6 +66,9 @@ spec:
             separator: /
             replacement: /var/log/pods/*$1/*.log
         pipeline_stages:
+          # Ajouter le label filename pour compatibilité dashboards
+          - static_labels:
+              filename: /var/log/nginx/access.log
           # Parse JSON logs nginx
           - json:
               expressions:
