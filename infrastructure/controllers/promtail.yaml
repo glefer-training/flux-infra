@@ -27,6 +27,11 @@ spec:
         namespace: loki
       interval: 12h
   values:
+    # Configuration du client Loki
+    config:
+      clients:
+        - url: http://loki:3100/loki/api/v1/push
+    
     # Configuration du fichier positions
     configmap:
       positions:
