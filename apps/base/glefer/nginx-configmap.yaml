@@ -4,69 +4,108 @@ metadata:
   name: nginx-config
   namespace: glefer
 data:
-  default.conf: |
-    # Configuration des logs avec format JSON pour parsing
-    log_format json_combined escape=json
-    '{'
-      '"timestamp":"$time_iso8601",'
-      '"remote_addr":"$remote_addr",'
-      '"method":"$request_method",'
-      '"uri":"$request_uri",'
-      '"status":$status,'
-      '"bytes_sent":$body_bytes_sent,'
-      '"request_time":$request_time,'
-      '"referrer":"$http_referer",'
-      '"user_agent":"$http_user_agent",'
-      '"upstream_response_time":"$upstream_response_time"'
-    '}';
-
-    # Serveur principal sur port 80
-    server {
-        listen 80;
-        server_name localhost;
-        
-        # Logs structurés en JSON
-        access_log /var/log/nginx/access.log json_combined;
-        error_log /var/log/nginx/error.log warn;
-        
-        location / {
-            root   /usr/share/nginx/html;
-            index  index.html index.htm;
-        }
-        
-        # Health check endpoint
-        location /health {
-            access_log off;
-            return 200 "healthy\n";
-            add_header Content-Type text/plain;
-        }
-        
-        error_page   500 502 503 504  /50x.html;
-        location = /50x.html {
-            root   /usr/share/nginx/html;
-        }
+  nginx.conf: |
+    user nginx;
+    worker_processes auto;
+    error_log /var/log/nginx/error.log warn;
+    pid /var/run/nginx.pid;
+    
+    events {
+        worker_connections 1024;
     }
     
-    # Serveur pour les métriques sur port 8080
-    server {
-        listen 8080;
-        server_name localhost;
+    http {
+        include /etc/nginx/mime.types;
+        default_type application/octet-stream;
         
-        location /nginx_status {
-            stub_status on;
-            access_log off;
-            allow all;
+        # Format de logs JSON pour Loki parsing
+        log_format json_combined escape=json
+        '{'
+          '"timestamp":"$time_iso8601",'
+          '"remote_addr":"$remote_addr",'
+          '"method":"$request_method",'
+          '"uri":"$request_uri",'
+          '"status":$status,'
+          '"bytes_sent":$body_bytes_sent,'
+          '"request_time":$request_time,'
+          '"referrer":"$http_referer",'
+          '"user_agent":"$http_user_agent",'
+          '"upstream_response_time":"$upstream_response_time"'
+        '}';
+        
+        sendfile on;
+        keepalive_timeout 65;
+        server_tokens off;
+        
+        # Compression
+        gzip on;
+        gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript image/svg+xml;
+        gzip_min_length 256;
+        gzip_comp_level 6;
+        gzip_vary on;
+        gzip_proxied any;
+        
+        # Serveur principal sur port 80
+        server {
+            listen 80;
+            server_name localhost;
+            root /usr/share/nginx/html;
+            index index.html index.htm;
+            
+            # Logs structurés en JSON
+            access_log /var/log/nginx/access.log json_combined;
+            error_log /var/log/nginx/error.log warn;
+            
+            # Cache static assets
+            location ~* \.(?:css|js|jpg|jpeg|gif|png|ico|webp|svg|avif)$ {
+                expires 30d;
+                add_header Cache-Control "public, max-age=2592000, immutable";
+            }
+            
+            location / {
+                try_files $uri $uri/ =404;
+            }
+            
+            # Health check endpoint
+            location /health {
+                access_log off;
+                return 200 "healthy\n";
+                add_header Content-Type text/plain;
+            }
+            
+            # Security headers
+            add_header X-Content-Type-Options nosniff;
+            add_header X-Frame-Options DENY;
+            add_header X-XSS-Protection "1; mode=block";
+            add_header Referrer-Policy no-referrer-when-downgrade;
+            add_header Strict-Transport-Security "max-age=31536000; includeSubDomains";
+            
+            error_page 500 502 503 504 /50x.html;
+            location = /50x.html {
+                root /usr/share/nginx/html;
+            }
         }
         
-        # Endpoint pour métriques détaillées (nginx-prometheus-exporter format)
-        location /metrics {
-            stub_status on;
+        # Serveur pour les métriques sur port 8080
+        server {
+            listen 8080;
+            server_name localhost;
             access_log off;
-            allow all;
-        }
-        
-        # Redirection pour toute autre demande
-        location / {
-            return 404;
+            
+            location /nginx_status {
+                stub_status on;
+                allow all;
+            }
+            
+            # Endpoint pour métriques détaillées
+            location /metrics {
+                stub_status on;
+                allow all;
+            }
+            
+            # Redirection pour toute autre demande
+            location / {
+                return 404;
+            }
         }
     }

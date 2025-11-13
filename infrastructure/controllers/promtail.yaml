@@ -33,7 +33,7 @@ spec:
       clients:
         - url: http://loki:3100/loki/api/v1/push
       positions:
-        filename: /tmp/positions.yaml
+        filename: /run/promtail/positions.yaml
       scrape_configs:
         # Configuration pour les logs nginx du namespace glefer
         - job_name: nginx-glefer
@@ -106,6 +106,18 @@ spec:
     # DaemonSet pour collecter sur tous les noeuds
     daemonset:
       enabled: true
+    
+    # Configuration des volumes pour DaemonSet
+    volumes:
+      - name: positions
+        hostPath:
+          path: /var/lib/promtail-positions
+          type: DirectoryOrCreate
+    
+    volumeMounts:
+      - name: positions
+        mountPath: /run/promtail
+        readOnly: false
     
     # Service Monitor pour Prometheus
     serviceMonitor:
