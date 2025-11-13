@@ -6,5 +6,4 @@ resources:
   - external-dns.yaml
   - grafana.yaml
   - loki.yaml
-  - promtail-config.yaml
   - promtail.yaml
