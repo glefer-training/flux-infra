@@ -116,6 +116,10 @@ spec:
           gnetId: 12708
           revision: 1
           datasource: Prometheus
+        loki-nginx-service-mesh:
+          gnetId: 12559
+          revision: 2
+          datasource: Loki
         nginx-loki-dashboard:
           json: |
             {
