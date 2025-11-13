@@ -5,3 +5,5 @@ resources:
   - ingress-traefik.yaml
   - external-dns.yaml
   - grafana.yaml
+  - loki.yaml
+  - promtail.yaml

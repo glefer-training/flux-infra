@@ -1,0 +1,114 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: promtail
+  namespace: loki
+spec:
+  dependsOn:
+    - name: loki
+      namespace: loki
+  interval: 12h
+  install:
+    createNamespace: true
+    strategy:
+      name: RetryOnFailure
+      retryInterval: 2m
+  upgrade:
+    strategy:
+      name: RetryOnFailure
+      retryInterval: 3m
+  chart:
+    spec:
+      chart: promtail
+      version: "6.15.5"
+      sourceRef:
+        kind: HelmRepository
+        name: grafana-loki
+        namespace: loki
+      interval: 12h
+  values:
+    config:
+      logLevel: info
+      serverPort: 3101
+      clients:
+        - url: http://loki:3100/loki/api/v1/push
+      positions:
+        filename: /tmp/positions.yaml
+      scrape_configs:
+        # Configuration pour les logs nginx du namespace glefer
+        - job_name: nginx-glefer
+          kubernetes_sd_configs:
+            - role: pod
+              namespaces:
+                names:
+                  - glefer
+          relabel_configs:
+            - source_labels: [__meta_kubernetes_pod_label_app]
+              action: keep
+              regex: nginx
+            - source_labels: [__meta_kubernetes_pod_container_name]
+              action: replace
+              target_label: container
+            - source_labels: [__meta_kubernetes_namespace]
+              action: replace
+              target_label: namespace
+            - source_labels: [__meta_kubernetes_pod_name]
+              action: replace
+              target_label: pod
+          pipeline_stages:
+            # Parse JSON logs nginx
+            - json:
+                expressions:
+                  timestamp: timestamp
+                  remote_addr: remote_addr
+                  method: method
+                  uri: uri
+                  status: status
+                  bytes_sent: bytes_sent
+                  request_time: request_time
+                  referrer: referrer
+                  user_agent: user_agent
+            
+            # Ajout d'étiquettes
+            - labels:
+                method:
+                status:
+            
+            # Classification des status codes
+            - template:
+                source: status_class
+                template: '{{ if and (ge .status "200") (lt .status "300") }}2xx{{ else if and (ge .status "300") (lt .status "400") }}3xx{{ else if and (ge .status "400") (lt .status "500") }}4xx{{ else if and (ge .status "500") (lt .status "600") }}5xx{{ else }}other{{ end }}'
+            
+            - labels:
+                status_class:
+            
+            # Métriques Prometheus dérivées des logs
+            - metrics:
+                nginx_http_requests_total:
+                  type: Counter
+                  description: "Total number of HTTP requests by status code"
+                  config:
+                    value: "1"
+                    action: inc
+                nginx_http_request_duration_seconds:
+                  type: Histogram
+                  description: "HTTP request duration in seconds"
+                  source: request_time
+                  config:
+                    buckets: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10]
+                nginx_http_response_size_bytes:
+                  type: Histogram
+                  description: "HTTP response size in bytes"  
+                  source: bytes_sent
+                  config:
+                    buckets: [64, 256, 1024, 4096, 16384, 65536, 262144, 1048576]
+
+    # DaemonSet pour collecter sur tous les noeuds
+    daemonset:
+      enabled: true
+    
+    # Service Monitor pour Prometheus
+    serviceMonitor:
+      enabled: true
+      labels:
+        release: kube-prometheus-stack

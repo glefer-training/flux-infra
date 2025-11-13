@@ -71,6 +71,17 @@ spec:
             url: http://kube-prometheus-stack-prometheus.monitoring:9090
             access: proxy
             isDefault: true
+          - name: Loki
+            type: loki
+            url: http://loki.loki:3100
+            access: proxy
+            isDefault: false
+            jsonData:
+              derivedFields:
+                - datasourceUid: prometheus
+                  matcherRegex: "status=(\\d+)"
+                  name: "Status Code Query"
+                  url: "/explore?left=%5B%22now-1h%22,%22now%22,%22Prometheus%22,%7B%22expr%22:%22nginx_http_requests_total%7Bstatus%3D%5C%22$${__value.raw}%5C%22%7D%22%7D%5D"
     dashboardProviders:
       dashboardproviders.yaml:
         apiVersion: 1
@@ -105,6 +116,80 @@ spec:
           gnetId: 12708
           revision: 1
           datasource: Prometheus
+        nginx-logs-status-codes:
+          json: |
+            {
+              "dashboard": {
+                "id": null,
+                "title": "NGINX Status Codes (from Logs)",
+                "tags": ["nginx", "logs", "status-codes"],
+                "timezone": "browser",
+                "panels": [
+                  {
+                    "id": 1,
+                    "title": "HTTP Requests by Status Code",
+                    "type": "stat",
+                    "targets": [{
+                      "expr": "sum(rate(nginx_http_requests_total{namespace=\"glefer\"}[5m])) by (status_class)",
+                      "refId": "A",
+                      "legendFormat": "{{status_class}}"
+                    }],
+                    "gridPos": {"h": 8, "w": 24, "x": 0, "y": 0},
+                    "fieldConfig": {
+                      "defaults": {
+                        "unit": "reqps",
+                        "color": {"mode": "palette-classic"}
+                      }
+                    }
+                  },
+                  {
+                    "id": 2,
+                    "title": "Error Rate (4xx + 5xx)",
+                    "type": "stat",
+                    "targets": [{
+                      "expr": "(sum(rate(nginx_http_requests_total{namespace=\"glefer\",status_class=~\"4xx|5xx\"}[5m])) / sum(rate(nginx_http_requests_total{namespace=\"glefer\"}[5m]))) * 100",
+                      "refId": "B"
+                    }],
+                    "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+                    "fieldConfig": {
+                      "defaults": {
+                        "unit": "percent",
+                        "color": {"mode": "thresholds"},
+                        "thresholds": {
+                          "steps": [
+                            {"color": "green", "value": null},
+                            {"color": "yellow", "value": 1},
+                            {"color": "red", "value": 5}
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "id": 3,
+                    "title": "Request Duration by Status",
+                    "type": "timeseries",
+                    "targets": [{
+                      "expr": "histogram_quantile(0.5, sum(rate(nginx_http_request_duration_seconds_bucket{namespace=\"glefer\"}[5m])) by (status_class, le))",
+                      "refId": "C",
+                      "legendFormat": "{{status_class}} (p50)"
+                    }, {
+                      "expr": "histogram_quantile(0.95, sum(rate(nginx_http_request_duration_seconds_bucket{namespace=\"glefer\"}[5m])) by (status_class, le))",
+                      "refId": "D", 
+                      "legendFormat": "{{status_class}} (p95)"
+                    }],
+                    "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+                    "fieldConfig": {
+                      "defaults": {
+                        "unit": "s"
+                      }
+                    }
+                  }
+                ],
+                "time": {"from": "now-1h", "to": "now"},
+                "refresh": "30s"
+              }
+            }
         nginx-monitoring:
           json: |
             {
