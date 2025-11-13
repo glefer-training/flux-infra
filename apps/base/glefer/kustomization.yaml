@@ -8,6 +8,8 @@ resources:
   - image-repository.yaml
   - image-policy.yaml
   - image-automation.yaml
+  - nginx-configmap.yaml
+  - servicemonitor.yaml
 
 commonAnnotations:
   app.kubernetes.io/version: "1.0.0"
