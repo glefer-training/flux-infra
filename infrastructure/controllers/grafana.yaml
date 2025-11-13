@@ -116,25 +116,85 @@ spec:
           gnetId: 12708
           revision: 1
           datasource: Prometheus
-        nginx-logs-status-codes:
+        nginx-loki-dashboard:
           json: |
             {
               "dashboard": {
                 "id": null,
-                "title": "NGINX Status Codes (from Logs)",
-                "tags": ["nginx", "logs", "status-codes"],
+                "title": "NGINX Logs Analysis (Loki)",
+                "tags": ["nginx", "loki", "logs", "status-codes"],
                 "timezone": "browser",
                 "panels": [
                   {
                     "id": 1,
-                    "title": "HTTP Requests by Status Code",
+                    "title": "HTTP Status Codes Distribution",
                     "type": "stat",
-                    "targets": [{
-                      "expr": "sum(rate(nginx_http_requests_total{namespace=\"glefer\"}[5m])) by (status_class)",
-                      "refId": "A",
-                      "legendFormat": "{{status_class}}"
-                    }],
+                    "datasource": "Loki",
+                    "targets": [
+                      {
+                        "expr": "sum by (status) (count_over_time({app=\"nginx\", container=\"nginx\"} | json | __error__=\"\" | status >= 200 | status < 300 [$__interval]))",
+                        "refId": "A",
+                        "legendFormat": "2xx Success"
+                      },
+                      {
+                        "expr": "sum by (status) (count_over_time({app=\"nginx\", container=\"nginx\"} | json | __error__=\"\" | status >= 300 | status < 400 [$__interval]))",
+                        "refId": "B", 
+                        "legendFormat": "3xx Redirect"
+                      },
+                      {
+                        "expr": "sum by (status) (count_over_time({app=\"nginx\", container=\"nginx\"} | json | __error__=\"\" | status >= 400 | status < 500 [$__interval]))",
+                        "refId": "C",
+                        "legendFormat": "4xx Client Error"
+                      },
+                      {
+                        "expr": "sum by (status) (count_over_time({app=\"nginx\", container=\"nginx\"} | json | __error__=\"\" | status >= 500 [$__interval]))",
+                        "refId": "D",
+                        "legendFormat": "5xx Server Error"
+                      }
+                    ],
                     "gridPos": {"h": 8, "w": 24, "x": 0, "y": 0},
+                    "fieldConfig": {
+                      "defaults": {
+                        "unit": "short",
+                        "color": {"mode": "palette-classic"},
+                        "custom": {
+                          "displayMode": "list",
+                          "orientation": "horizontal"
+                        }
+                      },
+                      "overrides": [
+                        {
+                          "matcher": {"id": "byName", "options": "2xx Success"},
+                          "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}}]
+                        },
+                        {
+                          "matcher": {"id": "byName", "options": "3xx Redirect"},
+                          "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}}]
+                        },
+                        {
+                          "matcher": {"id": "byName", "options": "4xx Client Error"},
+                          "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "yellow"}}]
+                        },
+                        {
+                          "matcher": {"id": "byName", "options": "5xx Server Error"},
+                          "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}}]
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "id": 2,
+                    "title": "Request Rate Over Time",
+                    "type": "timeseries",
+                    "datasource": "Loki",
+                    "targets": [
+                      {
+                        "expr": "sum(rate({app=\"nginx\", container=\"nginx\"} | json | __error__=\"\" [$__interval]))",
+                        "refId": "A",
+                        "legendFormat": "Total Requests/sec"
+                      }
+                    ],
+                    "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
                     "fieldConfig": {
                       "defaults": {
                         "unit": "reqps",
@@ -143,14 +203,17 @@ spec:
                     }
                   },
                   {
-                    "id": 2,
-                    "title": "Error Rate (4xx + 5xx)",
+                    "id": 3,
+                    "title": "Error Rate (%)",
                     "type": "stat",
-                    "targets": [{
-                      "expr": "(sum(rate(nginx_http_requests_total{namespace=\"glefer\",status_class=~\"4xx|5xx\"}[5m])) / sum(rate(nginx_http_requests_total{namespace=\"glefer\"}[5m]))) * 100",
-                      "refId": "B"
-                    }],
-                    "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+                    "datasource": "Loki", 
+                    "targets": [
+                      {
+                        "expr": "(sum(count_over_time({app=\"nginx\", container=\"nginx\"} | json | __error__=\"\" | status >= 400 [$__interval])) / sum(count_over_time({app=\"nginx\", container=\"nginx\"} | json | __error__=\"\" [$__interval]))) * 100",
+                        "refId": "A"
+                      }
+                    ],
+                    "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
                     "fieldConfig": {
                       "defaults": {
                         "unit": "percent",
@@ -159,35 +222,79 @@ spec:
                           "steps": [
                             {"color": "green", "value": null},
                             {"color": "yellow", "value": 1},
-                            {"color": "red", "value": 5}
+                            {"color": "orange", "value": 5},
+                            {"color": "red", "value": 10}
                           ]
                         }
                       }
                     }
                   },
                   {
-                    "id": 3,
-                    "title": "Request Duration by Status",
-                    "type": "timeseries",
-                    "targets": [{
-                      "expr": "histogram_quantile(0.5, sum(rate(nginx_http_request_duration_seconds_bucket{namespace=\"glefer\"}[5m])) by (status_class, le))",
-                      "refId": "C",
-                      "legendFormat": "{{status_class}} (p50)"
-                    }, {
-                      "expr": "histogram_quantile(0.95, sum(rate(nginx_http_request_duration_seconds_bucket{namespace=\"glefer\"}[5m])) by (status_class, le))",
-                      "refId": "D", 
-                      "legendFormat": "{{status_class}} (p95)"
-                    }],
-                    "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+                    "id": 4,
+                    "title": "Top URIs by Request Count",
+                    "type": "table",
+                    "datasource": "Loki",
+                    "targets": [
+                      {
+                        "expr": "topk(10, sum by (uri) (count_over_time({app=\"nginx\", container=\"nginx\"} | json | __error__=\"\" [$__interval])))",
+                        "refId": "A"
+                      }
+                    ],
+                    "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
+                    "fieldConfig": {
+                      "defaults": {
+                        "unit": "short",
+                        "custom": {
+                          "displayMode": "table"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "id": 5,
+                    "title": "Response Time Distribution",
+                    "type": "heatmap",
+                    "datasource": "Loki",
+                    "targets": [
+                      {
+                        "expr": "sum by (le) (rate({app=\"nginx\", container=\"nginx\"} | json | __error__=\"\" | unwrap request_time [$__interval]))",
+                        "refId": "A"
+                      }
+                    ],
+                    "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
                     "fieldConfig": {
                       "defaults": {
                         "unit": "s"
                       }
                     }
+                  },
+                  {
+                    "id": 6,
+                    "title": "Recent Error Logs (4xx/5xx)",
+                    "type": "logs",
+                    "datasource": "Loki",
+                    "targets": [
+                      {
+                        "expr": "{app=\"nginx\", container=\"nginx\"} | json | __error__=\"\" | status >= 400",
+                        "refId": "A"
+                      }
+                    ],
+                    "gridPos": {"h": 8, "w": 24, "x": 0, "y": 24},
+                    "options": {
+                      "showTime": true,
+                      "showLabels": true,
+                      "showCommonLabels": false,
+                      "wrapLogMessage": true,
+                      "prettifyLogMessage": true,
+                      "enableLogDetails": true
+                    }
                   }
                 ],
                 "time": {"from": "now-1h", "to": "now"},
-                "refresh": "30s"
+                "refresh": "30s",
+                "templating": {
+                  "list": []
+                }
               }
             }
         nginx-monitoring:
