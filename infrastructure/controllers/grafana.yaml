@@ -119,11 +119,10 @@ spec:
         nginx-loki-dashboard:
           json: |
             {
-              "dashboard": {
-                "id": null,
-                "title": "NGINX Logs Analysis (Loki)",
-                "tags": ["nginx", "loki", "logs", "status-codes"],
-                "timezone": "browser",
+              "id": null,
+              "title": "NGINX Logs Analysis (Loki)",
+              "tags": ["nginx", "loki", "logs", "status-codes"],
+              "timezone": "browser",
                 "panels": [
                   {
                     "id": 1,
@@ -296,7 +295,6 @@ spec:
                   "list": []
                 }
               }
-            }
         nginx-monitoring:
           json: |
             {
