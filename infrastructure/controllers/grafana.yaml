@@ -136,18 +136,23 @@ spec:
                         "legendFormat": "2xx Success"
                       },
                       {
-                        "expr": "sum by (status) (count_over_time({app=\"nginx\", container=\"nginx\"} | json | __error__=\"\" | status >= 300 | status < 400 [$__interval]))",
+                        "expr": "sum by (status) (count_over_time({app=\"nginx\", container=\"nginx\"} | json | __error__=\"\" | status = 304 [$__interval]))",
                         "refId": "B", 
+                        "legendFormat": "304 Not Modified"
+                      },
+                      {
+                        "expr": "sum by (status) (count_over_time({app=\"nginx\", container=\"nginx\"} | json | __error__=\"\" | status >= 300 | status < 400 | status != 304 [$__interval]))",
+                        "refId": "C", 
                         "legendFormat": "3xx Redirect"
                       },
                       {
                         "expr": "sum by (status) (count_over_time({app=\"nginx\", container=\"nginx\"} | json | __error__=\"\" | status >= 400 | status < 500 [$__interval]))",
-                        "refId": "C",
+                        "refId": "D",
                         "legendFormat": "4xx Client Error"
                       },
                       {
                         "expr": "sum by (status) (count_over_time({app=\"nginx\", container=\"nginx\"} | json | __error__=\"\" | status >= 500 [$__interval]))",
-                        "refId": "D",
+                        "refId": "E",
                         "legendFormat": "5xx Server Error"
                       }
                     ],
@@ -165,6 +170,10 @@ spec:
                         {
                           "matcher": {"id": "byName", "options": "2xx Success"},
                           "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}}]
+                        },
+                        {
+                          "matcher": {"id": "byName", "options": "304 Not Modified"},
+                          "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "light-blue"}}]
                         },
                         {
                           "matcher": {"id": "byName", "options": "3xx Redirect"},
@@ -230,6 +239,32 @@ spec:
                   },
                   {
                     "id": 4,
+                    "title": "Cache Hit Ratio",
+                    "type": "stat",
+                    "datasource": "Loki",
+                    "targets": [
+                      {
+                        "expr": "(sum(count_over_time({app=\"nginx\", container=\"nginx\"} | json | __error__=\"\" | status = 304 [$__interval])) / sum(count_over_time({app=\"nginx\", container=\"nginx\"} | json | __error__=\"\" [$__interval]))) * 100",
+                        "refId": "A"
+                      }
+                    ],
+                    "gridPos": {"h": 4, "w": 6, "x": 0, "y": 16},
+                    "fieldConfig": {
+                      "defaults": {
+                        "unit": "percent",
+                        "color": {"mode": "thresholds"},
+                        "thresholds": {
+                          "steps": [
+                            {"color": "red", "value": null},
+                            {"color": "yellow", "value": 20},
+                            {"color": "green", "value": 50}
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "id": 5,
                     "title": "Top URIs by Request Count",
                     "type": "table",
                     "datasource": "Loki",
@@ -239,7 +274,7 @@ spec:
                         "refId": "A"
                       }
                     ],
-                    "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
+                    "gridPos": {"h": 8, "w": 12, "x": 6, "y": 16},
                     "fieldConfig": {
                       "defaults": {
                         "unit": "short",
@@ -250,7 +285,7 @@ spec:
                     }
                   },
                   {
-                    "id": 5,
+                    "id": 6,
                     "title": "Response Time Distribution",
                     "type": "heatmap",
                     "datasource": "Loki",
@@ -260,7 +295,7 @@ spec:
                         "refId": "A"
                       }
                     ],
-                    "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
+                    "gridPos": {"h": 8, "w": 6, "x": 18, "y": 16},
                     "fieldConfig": {
                       "defaults": {
                         "unit": "s"
@@ -268,7 +303,7 @@ spec:
                     }
                   },
                   {
-                    "id": 6,
+                    "id": 7,
                     "title": "Recent Error Logs (4xx/5xx)",
                     "type": "logs",
                     "datasource": "Loki",
