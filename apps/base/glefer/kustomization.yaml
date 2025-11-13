@@ -9,7 +9,6 @@ resources:
   - image-policy.yaml
   - image-automation.yaml
   - nginx-configmap.yaml
-  - nginx-exporter-config.yaml
   - servicemonitor.yaml
 
 commonAnnotations:

@@ -52,33 +52,10 @@ spec:
           limits:
             cpu: 50m
             memory: 64Mi
-      # Log exporter pour status codes détaillés
-      - name: nginx-log-exporter
-        image: quay.io/martinhelmich/prometheus-nginxlog-exporter:v1.9.2
-        args:
-        - -config-file=/etc/prometheus-nginxlog-exporter/config.yml
-        ports:
-        - containerPort: 4040
-          name: log-metrics
-        volumeMounts:
-        - name: nginx-logs
-          mountPath: /var/log/nginx
-          readOnly: true
-        - name: exporter-config
-          mountPath: /etc/prometheus-nginxlog-exporter
-        resources:
-          requests:
-            cpu: 10m
-            memory: 32Mi
-          limits:
-            cpu: 100m
-            memory: 128Mi
+
       volumes:
       - name: nginx-config
         configMap:
           name: nginx-config
       - name: nginx-logs
         emptyDir: {}
-      - name: exporter-config
-        configMap:
-          name: nginx-exporter-config

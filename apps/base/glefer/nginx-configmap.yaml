@@ -8,15 +8,16 @@ data:
     # Configuration des logs avec format JSON pour parsing
     log_format json_combined escape=json
     '{'
-      '"time_local":"$time_local",'
+      '"timestamp":"$time_iso8601",'
       '"remote_addr":"$remote_addr",'
-      '"remote_user":"$remote_user",'
-      '"request":"$request",'
-      '"status": "$status",'
-      '"body_bytes_sent":"$body_bytes_sent",'
-      '"request_time":"$request_time",'
-      '"http_referrer":"$http_referer",'
-      '"http_user_agent":"$http_user_agent"'
+      '"method":"$request_method",'
+      '"uri":"$request_uri",'
+      '"status":$status,'
+      '"bytes_sent":$body_bytes_sent,'
+      '"request_time":$request_time,'
+      '"referrer":"$http_referer",'
+      '"user_agent":"$http_user_agent",'
+      '"upstream_response_time":"$upstream_response_time"'
     '}';
 
     # Serveur principal sur port 80

@@ -15,10 +15,6 @@ spec:
     interval: 30s
     path: /metrics
     honorLabels: true
-  - port: log-metrics  
-    interval: 30s
-    path: /metrics
-    honorLabels: true
   namespaceSelector:
     matchNames:
     - glefer
