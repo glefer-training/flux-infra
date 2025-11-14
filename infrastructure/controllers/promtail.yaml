@@ -39,6 +39,7 @@ spec:
                 request_time: request_time
                 upstream_response_time: upstream_response_time
                 bytes_sent: bytes_sent
+                request_uri: request_uri
 
           - labels:
               status:
@@ -47,6 +48,7 @@ spec:
               server_name:
               geoip_country_code:
               upstream_cache_status:
+              request_uri:
 
           - metrics:
               request_duration_seconds:
@@ -55,6 +57,9 @@ spec:
                 source: request_time
                 config:
                   buckets: [0.1, 0.5, 1, 2, 5, 10]
+          - drop:
+              source: request_uri
+              expression: "/(robots.txt|favicon.ico)"
 
       # 🟣 ATTENTION : scrapeConfigs → extraScrapeConfigs
       extraScrapeConfigs:
