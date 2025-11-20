@@ -58,7 +58,7 @@ spec:
       - glefer.fr
 
     sources:
-      - ingressse
+      - ingress
     
     ingressClassFilters:
       - traefik
