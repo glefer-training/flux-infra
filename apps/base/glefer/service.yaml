@@ -5,10 +5,7 @@ metadata:
   namespace: glefer
   labels:
     app: nginx
-  annotations:
-    external-dns.alpha.kubernetes.io/hostname: glefer.fr
 spec:
-  type: LoadBalancer
   selector:
     app: nginx
   ports:
