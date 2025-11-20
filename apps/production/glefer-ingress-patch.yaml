@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nginx
+  namespace: glefer
+spec:
+  rules:
+  - host: glefer.fr
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: nginx
+            port:
+              number: 80
+  tls:
+  - hosts:
+    - glefer.fr
+    secretName: glefer-tls
