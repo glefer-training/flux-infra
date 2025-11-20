@@ -50,13 +50,15 @@ spec:
     
     provider: ovh
     policy: sync
+    txtPrefix: "_external-dns."
+    txtOwnerId: "k3s"
     # txtOwnerId: argocd
     
     domainFilters:
       - glefer.fr
-    
+
     sources:
-      - ingress
+      - service
     
     ingressClassFilters:
       - traefik
