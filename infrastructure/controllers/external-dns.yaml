@@ -47,7 +47,7 @@ spec:
 
     image:  
       repository: docker.io/glefer/external-dns-debug
-      tag: "1.0.5"
+      tag: "1.0.6"
 
     provider:
       name: ovh
