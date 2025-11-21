@@ -45,9 +45,9 @@ spec:
       interval: 12h
   values:
 
-    image:  
-      repository: docker.io/glefer/external-dns-debug
-      tag: "1.0.4"
+    # image:  
+    #   repository: docker.io/glefer/external-dns-debug
+    #   tag: "1.0.4"
 
     provider:
       name: ovh
