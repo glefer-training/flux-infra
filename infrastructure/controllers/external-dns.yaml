@@ -48,8 +48,6 @@ spec:
       name: ovh
     
     env:
-      - name: EXTERNAL_DNS_DRY_RUN
-        value: "1"
       - name: OVH_CONSUMER_KEY
         valueFrom:
           secretKeyRef:
