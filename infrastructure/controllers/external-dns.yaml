@@ -45,8 +45,10 @@ spec:
       interval: 12h
   values:
     image:
-      registry: registry-1.docker.io
-      repository: bitnamilegacy/external-dns
+      # registry: registry-1.docker.io
+      # repository: bitnamilegacy/external-dns
+      repository: glefer/external-dns-debug
+      tag: "1.0.0"
     
     provider: ovh
     policy: sync
