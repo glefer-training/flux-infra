@@ -48,6 +48,8 @@ spec:
       name: ovh
     
     env:
+      - name: EXTERNAL_DNS_DRY_RUN
+        value: 1
       - name: OVH_CONSUMER_KEY
         valueFrom:
           secretKeyRef:
@@ -76,10 +78,11 @@ spec:
     
     sources:
       - ingress
+
+    logLevel: debug
     
     extraArgs:
       - --ingress-class=traefik
-      - --log-level=debug
     
     resources:
       requests:
