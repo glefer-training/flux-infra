@@ -78,7 +78,6 @@ spec:
     
     sources:
       - ingress
-
     logLevel: debug
     
     extraArgs:
