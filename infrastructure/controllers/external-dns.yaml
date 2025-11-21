@@ -80,7 +80,6 @@ spec:
     extraArgs:
       - --ingress-class=traefik
       - --log-level=debug
-      - --dry-run=true
     
     resources:
       requests:
